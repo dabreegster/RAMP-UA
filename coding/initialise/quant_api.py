@@ -83,12 +83,7 @@ class QuantRampAPI:
         for j in range(n):
             p = probPij[zonei, j]
             if p >= threshold:
-                # yes, zonei==j is correct, they're always called 'zonei'
-                row2 = dfZones.loc[dfZones['zonei'] == j]
-                id = row2['URN'].values[0]
                 result.append(p)
-            # end if
-        # end for
         return result
 
     @classmethod
