@@ -56,25 +56,23 @@ class QuantRampAPI:
 
 
     @staticmethod
-    def getProbablePrimarySchoolsByMSOAIZ(dfPrimaryPopulation,dfPrimaryZones,primary_probPij,msoa_iz,threshold):
+    def getProbableVenuesByMSOAIZ(dfPopulation,dfZones,probPij,msoa_iz,threshold):
         """
-        getProbablePrimarySchoolsByMSOAIZ
+        getProbableVenuesByMSOAIZ
         Given an MSOA area code (England and Wales) or an Intermediate Zone (IZ) 2001 code (Scotland), return
-        a list of all the surrounding primary schools whose probability of being visited by the MSOA_IZ is
+        a list of all the surrounding venues whose probability of being visited by the MSOA_IZ is
         greater than or equal to the threshold.
-        School ids are taken from the Edubase list of URN
-        NOTE: code identical to the secondary school version, only with switched lookup tables
         @param msoa_iz An MSOA code (England/Wales e.g. E02000001) or an IZ2001 code (Scotland e.g. S02000001)
-        @param threshold Probability threshold e.g. 0.5 means return all possible schools with probability>=0.5
+        @param threshold Probability threshold e.g. 0.5 means return all possible venues with probability>=0.5
         @returns a list of probabilities in the same order as the venues
         """
         result = []
-        zonei = int(dfPrimaryPopulation.loc[dfPrimaryPopulation['msoaiz'] == msoa_iz,'zonei'])
-        m,n = primary_probPij.shape
+        zonei = int(dfPopulation.loc[dfPopulation['msoaiz'] == msoa_iz,'zonei'])
+        m,n = probPij.shape
         for j in range(n):
-            p = primary_probPij[zonei,j]
+            p = probPij[zonei,j]
             if p>=threshold:
-                row2 = dfPrimaryZones.loc[dfPrimaryZones['zonei'] == j] #yes, zonei==j is correct, they're always called 'zonei'
+                row2 = dfZones.loc[dfZones['zonei'] == j] #yes, zonei==j is correct, they're always called 'zonei'
                 id = row2['URN'].values[0]
                 result.append(p)
             #end if
@@ -82,96 +80,6 @@ class QuantRampAPI:
         return result
 
 
-    @staticmethod
-    def getProbableSecondarySchoolsByMSOAIZ(dfSecondaryPopulation,dfSecondaryZones,secondary_probPij,msoa_iz,threshold):
-        """
-        getProbableSecondarySchoolsByMSOAIZ
-        Given an MSOA area code (England and Wales) or an Intermediate Zone (IZ) 2001 code (Scotland), return
-        a list of all the surrounding secondary schools whose probability of being visited by the MSOA_IZ is
-        greater than or equal to the threshold.
-        School ids are taken from the Edubase list of URN
-        NOTE: code identical to the primary school version, only with switched lookup tables
-        @param msoa_iz An MSOA code (England/Wales e.g. E02000001) or an IZ2001 code (Scotland e.g. S02000001)
-        @param threshold Probability threshold e.g. 0.5 means return all possible schools with probability>=0.5
-        @returns a list of probabilities in the same order as the venues
-        """
-        result = []
-        zonei = int(dfSecondaryPopulation.loc[dfSecondaryPopulation['msoaiz'] == msoa_iz, 'zonei'])
-        m,n = secondary_probPij.shape
-        for j in range(n):
-            p = secondary_probPij[zonei,j]
-            if p>=threshold:
-                row2 = dfSecondaryZones.loc[dfSecondaryZones['zonei'] == j] #yes, zonei==j is correct, they're always called 'zonei'
-                id = row2['URN'].values[0]
-                result.append(p)
-            #end if
-        #end for
-        return result
-    
-
-    @staticmethod
-    def getProbableRetailByMSOAIZ(dfRetailPointsPopulation,dfRetailPointsZones,retailpoints_probSij,msoa_iz,threshold):
-        """
-        getProbableRetailByMSOAIZ
-        Given an MSOA area code (England and Wales) or an Intermediate Zone (IZ) 2001 code (Scotland), return
-        a list of all the surrounding retail points whose probability of being visited by the MSOA_IZ is
-        greater than or equal to the threshold.
-        Retail ids are from ????
-        @param msoa_iz An MSOA code (England/Wales e.g. E02000001) or an IZ2001 code (Scotland e.g. S02000001)
-        @param threshold Probability threshold e.g. 0.5 means return all possible retail points with probability>=0.5
-        @returns a list of probabilities in the same order as the venues
-        """
-        result = []
-
-        #TODO: revert back to this version?
-        # zonei = int(dfRetailPointsPopulation.loc[dfRetailPointsPopulation['msoaiz'] == msoa_iz, 'zonei'])
-        series = dfRetailPointsPopulation.loc[dfRetailPointsPopulation['msoaiz'] == msoa_iz, 'zonei']
-        if series.size > 0:
-            zonei = int(series)
-        else:
-            zonei = 0
-
-        m,n = retailpoints_probSij.shape
-        for j in range(n):
-            p = retailpoints_probSij[zonei,j]
-            if p>=threshold:
-                row2 = dfRetailPointsZones.loc[dfRetailPointsZones['zonei'] == j] #yes, zonei==j is correct, they're always called 'zonei'
-                id = row2['id'].values[0]
-                result.append(p)
-            #end if
-        #end for
-        return result
-    
-
-    @staticmethod
-    def getProbableHospitalByMSOAIZ(dfHospitalPopulation,dfHospitalZones,hospital_probHij,msoa_iz,threshold):
-        """
-        getProbableHospitalByMSOAIZ
-        Given an MSOA area code (England and Wales) or an Intermediate Zone (IZ) 2001 code (Scotland), return
-        a list of all the surrounding hospitals whose probability of being visited by the MSOA_IZ is
-        greater than or equal to the threshold.
-        Hospital ids are taken from the NHS England export of "location" - see hospitalZones for ids and names (and east/north)
-        NOTE: code identical to the primary school version, only with switched lookup tables
-        @param msoa_iz An MSOA code (England/Wales e.g. E02000001) or an IZ2001 code (Scotland e.g. S02000001)
-        @param threshold Probability threshold e.g. 0.5 means return all possible hospital points with probability>=0.5
-        @returns a list of [ {id: 'hospitalid1', p: 0.5}, {id: 'hospitalid2', p:0.6}, ... etc] (NOTE: not sorted in any particular order)
-        """
-        result = []
-        zonei = int(dfHospitalPopulation.loc[dfHospitalPopulation['msoaiz'] == msoa_iz, 'zonei'])
-        m,n = hospital_probHij.shape
-        for j in range(n):
-            p = hospital_probHij[zonei,j]
-            if p>=threshold:
-                row2 = dfHospitalZones.loc[dfHospitalZones['zonei'] == j] #yes, zonei==j is correct, they're always called 'zonei'
-                id = row2['id'].values[0]
-                result.append(p)
-            #end if
-        #end for
-        return result
-    
-
-    
-    
     @classmethod
     def get_flows(cls,venue, msoa_list, threshold, thresholdtype):
         """
@@ -182,25 +90,25 @@ class QuantRampAPI:
         for m in tqdm(msoa_list, desc=f"Reading {venue} MSOA flows"): # tqdm makes loops show a smart progress meter
             # get all probabilities for this MSOA (threshold set to 0)
             if venue == "PrimarySchool":
-                result_tmp = QuantRampAPI.getProbablePrimarySchoolsByMSOAIZ(cls.dfPrimaryPopulation,
+                result_tmp = QuantRampAPI.getProbableVenuesByMSOAIZ(cls.dfPrimaryPopulation,
                                                                             cls.dfPrimaryZones,
                                                                             cls.primary_probPij,
                                                                             m,
                                                                             0)
             elif venue == "SecondarySchool":
-                result_tmp = QuantRampAPI.getProbableSecondarySchoolsByMSOAIZ(cls.dfSecondaryPopulation,
+                result_tmp = QuantRampAPI.getProbableVenuesByMSOAIZ(cls.dfSecondaryPopulation,
                                                                               cls.dfSecondaryZones,
                                                                               cls.secondary_probPij,
                                                                               m,
                                                                               0)
             elif venue == "Retail":
-                result_tmp = QuantRampAPI.getProbableRetailByMSOAIZ(cls.dfRetailPointsPopulation,
+                result_tmp = QuantRampAPI.getProbableVenuesByMSOAIZ(cls.dfRetailPointsPopulation,
                                                                     cls.dfRetailPointsZones,
                                                                     cls.retailpoints_probSij,
                                                                     m,
                                                                     0)
             elif venue == "Nightclubs":
-                result_tmp = QuantRampAPI.getProbableRetailByMSOAIZ(cls.dfRetailPointsPopulation,
+                result_tmp = QuantRampAPI.getProbableVenuesByMSOAIZ(cls.dfRetailPointsPopulation,
                                                                     cls.dfRetailPointsZones,
                                                                     cls.retailpoints_probSij,
                                                                     m,
