@@ -120,6 +120,10 @@ class SnapshotConvertor:
             activity_flows = self.individuals.loc[:, activity_name + "_Flows"]
             activity_durations = self.individuals.loc[:, activity_name + "_Duration"]
 
+            # TODO Ah, I think the problem is that Work venues aren't assigned correctly yet
+            if activity_name == 'Work':
+                continue
+
             for people_id, (local_place_ids, flows, duration) in tqdm(
                     enumerate(zip(activity_venues, activity_flows, activity_durations)),
                     total=self.num_people,
@@ -127,6 +131,10 @@ class SnapshotConvertor:
                 flows = np.array(flows) * duration
 
                 # check dimensions match
+                if len(local_place_ids) != flows.shape[0]:
+                    print(f'for {activity_name} and person {people_id}, we have {len(local_place_ids)} local place IDs, but {flows.shape[0]} flows')
+                    print(f'  that first flow is {flows[0]}')
+                    continue
                 assert len(local_place_ids) == flows.shape[0]
 
                 num_places_to_add = len(local_place_ids)

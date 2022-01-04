@@ -17,7 +17,7 @@ microsim:
   use-cache: TRUE # Whether to cache the population data initialisation
   opencl-model: TRUE # Run the OpenCL model
   opencl-gui: TRUE # Run the OpenCL model with GUI visualisation for OpenCL model
-  opencl-gpu: FALSE # Run OpenCL model on the GPU (if false then run using CPU)
+  opencl-gpu: TRUE # Run OpenCL model on the GPU (if false then run using CPU)
 
 
 # Parameters that are used to calibrate the model.
