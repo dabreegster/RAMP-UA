@@ -67,7 +67,6 @@ def main(parameters_file):
             repetitions = sim_params["repetitions"]
             use_lockdown = sim_params["use-lockdown"]
             # quant_dir = sim_params["quant-dir"]
-            use_cache = sim_params["use-cache"]
             open_cl_model = sim_params["opencl-model"]
             opencl_gui = sim_params["opencl-gui"]
             opencl_gpu = sim_params["opencl-gpu"]
@@ -107,81 +106,50 @@ def main(parameters_file):
     print(f"study area folder {study_area_folder_in_processed_data}")
     if not os.path.exists(study_area_folder_in_processed_data):
         raise Exception("Study area folder doesn't exist, check the spelling or the location")
-    cache = InitialisationCache(cache_dir=study_area_folder_in_processed_data)
 
-    #     # generate new population dataframes if we aren't using the cache, or if the cache is empty
-
-    if not use_cache or cache.is_empty():
-        raise Exception(f'You will need to run the main_initialisation module because {"caching is disabled" if not use_cache else "the cache is empty"}')
-        # # args for population initialisation
-        # population = PopulationInitialisation(**population_args)
-        # individuals = population.individuals
-        # activity_locations = population.activity_locations
-        #
-        # # store in cache so we can load later
-        # cache.store_in_cache(individuals, activity_locations)
-    else:  # load from cache
-        print("Loading data from previous cache")
-        individuals, activity_locations, lockdown_file = cache.read_from_cache()
-
-    if use_lockdown:
-        print(f"Loading the lockdown scenario")
-        time_activity_multiplier = lockdown_file.change
-        time_activity_multiplier = time_activity_multiplier[startDate:len(time_activity_multiplier)] # offset file to start date
-        time_activity_multiplier.index = range(len(time_activity_multiplier))
-    else:
-        time_activity_multiplier = np.ones(2000)
-            
-    # if open_cl_model:
-    run_opencl_model(individuals,
-                     activity_locations,
-                     time_activity_multiplier,
-                     iterations,
-                     # study_area_folder_in_processed_data, # selected_region_folder_full_path, #todo check this name
+    run_opencl_model(iterations,
                      study_area,
                      opencl_gui,
                      opencl_gpu,
-                     use_cache,
                      initialise,
                      calibration_params,
                      disease_params,
-                     parameters_file)
-    # else:
-    #     # If -init flag set then don't run the model. Note for the opencl model this check needs to happen
-    #     # after the snapshots have been created in run_opencl_model
-    #     if initialise:
-    #         print("Have finished initialising model. -init flag is set so not running it. Exiting")
-    #         return
-    #     run_python_model(individuals,
-    #                      activity_locations,
-    #                      time_activity_multiplier,
-    #                      msim_args,
-    #                      iterations,
-    #                      repetitions,
-    #                      parameters_file)
+                     parameters_file,
+                     use_lockdown)
 
 
-def run_opencl_model(individuals_df,
-                     activity_locations,
-                     time_activity_multiplier,
-                     iterations,
+def run_opencl_model(iterations,
                      # regional_data_dir_full_path,
                      study_area,
                      use_gui,
                      use_gpu,
-                     use_cache,
                      initialise,
                      calibration_params,
                      disease_params,
-                     parameters_file):
+                     parameters_file,
+                     use_lockdown):
     study_area_folder_in_processed_data = os.path.join(Constants.Paths.PROCESSED_DATA.FULL_PATH_FOLDER,
                                                        study_area)
-    snapshot_cache_filepath = os.path.join(study_area_folder_in_processed_data, "snapshot", "cache.npz") # project_dir + "microsim/opencl/snapshots/cache.npz"
+    snapshot_cache_filepath = os.path.join(study_area_folder_in_processed_data, "snapshot", "cache.npz")
 
     # Choose whether to load snapshot file from cache, or create a snapshot from population data
-    if not use_cache or not os.path.exists(snapshot_cache_filepath):
+    if not os.path.exists(snapshot_cache_filepath):
         print("\nGenerating Snapshot for OpenCL model")
-        snapshot_converter = SnapshotConvertor(individuals_df,
+        cache = InitialisationCache(cache_dir=study_area_folder_in_processed_data)
+        if cache.is_empty():
+            raise Exception(f'You will need to run the main_initialisation module because the cache is empty')
+        print("Loading data from previous cache")
+        individuals, activity_locations, lockdown_file = cache.read_from_cache()
+
+        if use_lockdown:
+            print(f"Loading the lockdown scenario")
+            time_activity_multiplier = lockdown_file.change
+            time_activity_multiplier = time_activity_multiplier[startDate:len(time_activity_multiplier)] # offset file to start date
+            time_activity_multiplier.index = range(len(time_activity_multiplier))
+        else:
+            time_activity_multiplier = np.ones(2000)
+
+        snapshot_converter = SnapshotConvertor(individuals,
                                                activity_locations,
                                                time_activity_multiplier,
                                                study_area_folder_in_processed_data)
